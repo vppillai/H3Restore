@@ -18,6 +18,9 @@ required arguments:
   -p PATH, --path PATH  Location of Harmony3 repo
 ```
 
+![demo](https://user-images.githubusercontent.com/3634378/119480067-eae72080-bd6e-11eb-8160-336c567d5fa3.gif)
+
+
 ## EXE release
 The executable was created using pyinstaller for people who have difficulty installing python.
 
