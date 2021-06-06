@@ -4,14 +4,14 @@
 # If we meet some day, and you think this stuff is worth it, you can buy me a beer in return 
 #                                                                        —※Vysakh P Pillai※
 
-import glob, os
+import glob, os,sys
 import argparse
 import git
 import re
 from colorama import init, Fore, Back, Style
 
 specialRepos=['contentmanager']
-__version__="v1.2.0"
+__version__="v1.3.0"
 
 #Check if you are indeed in a git repo
 def is_git_repo(path):
@@ -25,7 +25,7 @@ def is_git_repo(path):
 def print_versions(repos):
     if not bool(repos):
         print(Fore.RED+Style.BRIGHT+"No repos found in path.")
-        exit()
+        sys.exit()
 
     print (Back.LIGHTBLUE_EX+"{:<35} {:<20} {:<15}".format('Repo','Current Version','Latest Version'))
     for k, v in repos.items():
@@ -33,7 +33,13 @@ def print_versions(repos):
             LineCol=Fore.RED+Style.BRIGHT
         else:
             LineCol=Fore.GREEN
-        print (LineCol+"{:<40} {:<20} {:<20}".format(k,v["cTag"],v["lTag"]))
+
+        cleanStat=""
+        if "cleanStat" in v.keys():
+            if not v["cleanStat"]:
+                cleanStat=Fore.RED+Style.BRIGHT+" (Modified)"
+
+        print (LineCol+"{:<40} {:<20} {:<} {}".format(k,v["cTag"],v["lTag"],cleanStat))
     print('\n\n')
 
 #find the latest tag matching the Harmony3 semver pattern. Need to do this since some repos like cryptoauth lib has versions like 20210514
@@ -62,6 +68,12 @@ def restore_versions(repos,noclean):
                 pass
         print(f')')
 
+def check_clean(repo):
+    if not git.Repo(repo).git.status("--porcelain"):
+        return True
+    else:
+        return False
+
 #get details of the repos 
 def get_repos(path,fetch=False):
     repos={}
@@ -76,6 +88,7 @@ def get_repos(path,fetch=False):
             repos[os.path.basename(repo)]["path"]=repo
             repos[os.path.basename(repo)]["cTag"]=(git.Repo(repo).git.describe())
             repos[os.path.basename(repo)]["lTag"]=get_last_semver((git.Repo(repo).git.tag("--sort=creatordate").split('\n')))
+            repos[os.path.basename(repo)]["cleanStat"]=check_clean(repo)
     return repos
     
 
@@ -96,10 +109,11 @@ if __name__ == "__main__":
     print_versions(repos)
     if(args.list):
         print(Fore.YELLOW+Style.BRIGHT+"No repos have been been updated due to the -l flag")
-        exit()
+        sys.exit()
 
     restore_versions(repos,args.clean)
     print(Fore.YELLOW+"\n\nResults after the process:\n")
 
-    upRepos=get_repos(args.path);
+    upRepos=get_repos(args.path)
     print_versions(upRepos)
+    
