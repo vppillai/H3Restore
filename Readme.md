@@ -22,7 +22,8 @@ required arguments:
   -p PATH, --path PATH  Location of Harmony3 repo
 ```
 
-![demo](https://user-images.githubusercontent.com/3634378/119480067-eae72080-bd6e-11eb-8160-336c567d5fa3.gif)
+![demo2](https://user-images.githubusercontent.com/3634378/120993170-ea07b300-c7a0-11eb-86d4-0430780199a2.gif)
+
 
 
 ## EXE release
