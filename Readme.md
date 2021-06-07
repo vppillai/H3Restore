@@ -12,7 +12,8 @@ Tool to restore Harmony3 Git repos to the latest tag v1.4.0
 optional arguments:
   -h, --help            show this help message and exit
   -l, --list            Just list the changes. do not move the tags
-  -C, --noclean         Do not clean and reset the repos. Might result in failures if there are uncommitted changes interfering with the tag change
+  -C, --noclean         Do not clean and reset the repos. Might result in failures if there are 
+                        uncommitted changes interfering with the tag change
   -F, --nofetch         Do not fetch latest repo versions from origin
   -m MANIFEST, --manifest MANIFEST
                         manifest file to be used to restore repos. Takes precedence over fetched versions
