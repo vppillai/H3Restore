@@ -10,9 +10,10 @@ import git
 import re
 from colorama import init, Fore, Back, Style
 import yaml
+from lxml import etree
 
 specialRepos=['contentmanager']
-__version__="v1.4.0"
+__version__="v1.5.0"
 
 #Check if you are indeed in a git repo
 def is_git_repo(path):
@@ -69,6 +70,18 @@ def get_last_semver(tags):
         if (re.search(verPattern,version)):
             return version        
     return "unknown"
+
+def processPackage(packagePath):
+    if not os.path.isfile(packagePath):
+        print(Fore.RED+"Package file does not exist.")
+        sys.exit(-4)
+    packageTree = etree.parse(packagePath)
+    package=packageTree.getroot()
+    dependencies=package.findall('Dependencies/Dependency')
+    manifest={}
+    for dependency in dependencies:
+        manifest[dependency.attrib['name']]=dependency.attrib['version']
+    return manifest
 
 def processManifest(manifestPath):
     if not os.path.isfile(manifestPath):
@@ -141,17 +154,22 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--list', dest='list', default=False,action='store_true', help='Just list the changes. do not move the tags')
     parser.add_argument('-C', '--noclean', dest='clean', default=True,action='store_false', help='Do not clean and reset the repos. Might result in failures if there are uncommitted changes interfering with the tag change')
     parser.add_argument('-F', '--nofetch', dest='fetch', default=True,action='store_false', help='Do not fetch latest repo versions from origin')
-    parser.add_argument('-m', '--manifest', dest='manifest', help='manifest file to be used to restore repos. Takes precedence over fetched versions')
+    
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-m', '--manifest', dest='manifest', help='manifest file to be used to restore repos. Takes precedence over fetched versions')
+    group.add_argument('-k', '--package', dest='package', help='package file to be used to restore repos. Takes precedence over fetched versions')
     
     args = parser.parse_args()
 
     manifest=None
     if args.manifest:
         manifest=processManifest(args.manifest)
+    elif args.package:
+        manifest=processPackage(args.package)
 
     repos=get_repos(args.path,fetch=args.fetch,manifest=manifest)
     
-    print_versions(repos, args.manifest)
+    print_versions(repos, manifest)
     if(args.list):
         print(Fore.YELLOW+Style.BRIGHT+"No repos have been been updated due to the -l flag")
         sys.exit(-2)
@@ -160,4 +178,4 @@ if __name__ == "__main__":
     print(Fore.YELLOW+"\n\nResults after the process:\n")
 
     upRepos=get_repos(args.path,manifest=manifest)
-    print_versions(upRepos, args.manifest)
+    print_versions(upRepos, manifest)
