@@ -11,9 +11,12 @@ import re
 from colorama import init, Fore, Back, Style
 import yaml
 from lxml import etree
+from datetime import datetime
+import platform
+import pprint
 
 specialRepos=['contentmanager']
-__version__="v1.5.0"
+__version__="v1.6.0"
 
 #Check if you are indeed in a git repo
 def is_git_repo(path):
@@ -144,6 +147,26 @@ def get_repos(path,fetch=False,manifest=None):
                     repos[os.path.basename(repo)]["manifestVer"]=manifest[os.path.basename(repo)]
     return repos
     
+def generate_manifest(repos):
+    manifestData={}
+    manifestData["project"]="H3Restore"
+    manifestData["creation_date"]=datetime.now().isoformat()
+    manifestData["operating_system"]=f'{platform.system()} {platform.release()}'
+    manifestData["mhc_mode"]="Standalone"
+    manifestData["mhc_version"]=repos["mhc"]["cTag"]
+    manifestData["compiler"]=None
+    manifestData["modules"]=[]
+
+    for k, v in repos.items():
+        entry={}
+        entry["name"]=k
+        entry["version"]=v["cTag"]
+        manifestData["modules"].append(entry)
+    with open("harmony-manifest-success.yml", "w") as file:
+        file.write(f"# This file was created using H3restore tool {__version__}\n")
+        file.write("# For source code, refer to https://github.com/vppillai/H3Restore \n\n")
+        yaml.dump(manifestData,file)
+
 
 if __name__ == "__main__":
     init(autoreset=True)
@@ -154,6 +177,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--list', dest='list', default=False,action='store_true', help='Just list the changes. do not move the tags')
     parser.add_argument('-C', '--noclean', dest='clean', default=True,action='store_false', help='Do not clean and reset the repos. Might result in failures if there are uncommitted changes interfering with the tag change')
     parser.add_argument('-F', '--nofetch', dest='fetch', default=True,action='store_false', help='Do not fetch latest repo versions from origin')
+    parser.add_argument('-x', '--manifestOut', dest='manifestOut',default=False,action='store_true', help='Generate a manifest file with the final configuration')
     
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-m', '--manifest', dest='manifest', help='manifest file to be used to restore repos. Takes precedence over fetched versions')
@@ -166,12 +190,16 @@ if __name__ == "__main__":
         manifest=processManifest(args.manifest)
     elif args.package:
         manifest=processPackage(args.package)
-
+ 
+    print(Fore.YELLOW+"Checking repo details\n")
     repos=get_repos(args.path,fetch=args.fetch,manifest=manifest)
     
     print_versions(repos, manifest)
     if(args.list):
         print(Fore.YELLOW+Style.BRIGHT+"No repos have been been updated due to the -l flag")
+        if args.manifestOut:
+            print(Fore.YELLOW+"\nCreting local manifest file\n")
+            generate_manifest(repos)    
         sys.exit(-2)
 
     restore_versions(repos,args.clean)
@@ -179,3 +207,7 @@ if __name__ == "__main__":
 
     upRepos=get_repos(args.path,manifest=manifest)
     print_versions(upRepos, manifest)
+
+    if args.manifestOut:
+        print(Fore.YELLOW+"\r\nCreting local manifest file\n")
+        generate_manifest(upRepos)
