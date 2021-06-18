@@ -5,15 +5,17 @@ We often need to switch between different dependency versions of Microchip Harmo
 ## Running the tool
 
 ```
-usage: H3restore [-h] -p PATH [-l] [-C] [-F] [-m MANIFEST | -k PACKAGE]
+usage: H3restore [-h] -p PATH [-l] [-C] [-F] [-x] [-m MANIFEST | -k PACKAGE]
 
-Tool to restore Harmony3 Git repos to the latest tag v1.5.0
+Tool to restore Harmony3 Git repos to the latest tag v1.6.0
 
 optional arguments:
   -h, --help            show this help message and exit
   -l, --list            Just list the changes. do not move the tags
-  -C, --noclean         Do not clean and reset the repos. Might result in failures if there are uncommitted changes interfering with the tag change
+  -C, --noclean         Do not clean and reset the repos. Might result in failures if there are uncommitted changes
+                        interfering with the tag change
   -F, --nofetch         Do not fetch latest repo versions from origin
+  -x, --manifestOut     Generate a manifest file with the final configuration
   -m MANIFEST, --manifest MANIFEST
                         manifest file to be used to restore repos. Takes precedence over fetched versions
   -k PACKAGE, --package PACKAGE
