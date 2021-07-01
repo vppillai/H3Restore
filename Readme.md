@@ -25,6 +25,8 @@ required arguments:
   -p PATH, --path PATH  Location of Harmony3 repo
 ```
 
+> **Note:** Make sure that you ahve git is available in your `%PATH%` / `$PATH`
+
 ![demo2](https://user-images.githubusercontent.com/3634378/120993170-ea07b300-c7a0-11eb-86d4-0430780199a2.gif)
 
 
