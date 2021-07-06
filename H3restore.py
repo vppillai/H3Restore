@@ -16,7 +16,7 @@ import platform
 import pprint
 
 specialRepos=['contentmanager']
-__version__="v1.6.0"
+__version__="v1.6.1"
 
 #Check if you are indeed in a git repo
 def is_git_repo(path):
@@ -66,6 +66,7 @@ def print_versions(repos,manifest=None):
     print('\n\n')
 
 #find the latest tag matching the Harmony3 semver pattern. Need to do this since some repos like cryptoauth lib has versions like 20210514
+#  This is a workaround since passing the --list v* option with --sort=creatordate is causing issues eventhough it works in the cli
 def get_last_semver(tags):
     #this is slightly modified from the regex provided by https://semver.org/ by enforcing a starting 'v'
     verPattern=r'^v(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
@@ -111,14 +112,19 @@ def restore_versions(repos,noclean):
             if(v["cTag"]!=v["lTag"]):
                 if("unknown"!=v["lTag"]):
                     print(f',{Fore.GREEN} checkout {Fore.LIGHTCYAN_EX}{v["lTag"]}{Fore.RESET}',end='')
-                    git.Repo(v["path"]).git.checkout(v["lTag"])
+                    try:
+                        git.Repo(v["path"]).git.checkout(v["lTag"])
+                    except Exception as e:
+                        print(f'\n{Fore.RED} Git Error \n {e}')
                 else:
                     pass
         else:
             if(v["cTag"]!=v["manifestVer"]):
                 print(f',{Fore.GREEN} checkout {Fore.LIGHTCYAN_EX}{v["manifestVer"]}{Fore.RESET}',end='')
-                git.Repo(v["path"]).git.checkout(v["manifestVer"])
-
+                try:
+                    git.Repo(v["path"]).git.checkout(v["manifestVer"])
+                except Exception as e:
+                    print(f'\n{Fore.RED} Git Error \n {e}')
         print(f')')
 
 def check_clean(repo):
@@ -139,7 +145,7 @@ def get_repos(path,fetch=False,manifest=None):
                 git.Repo(repo).git.fetch()
             repos[os.path.basename(repo)]={}
             repos[os.path.basename(repo)]["path"]=repo
-            repos[os.path.basename(repo)]["cTag"]=(git.Repo(repo).git.describe())
+            repos[os.path.basename(repo)]["cTag"]=(git.Repo(repo).git.describe("--match=v*"))
             repos[os.path.basename(repo)]["lTag"]=get_last_semver((git.Repo(repo).git.tag("--sort=creatordate").split('\n')))
             repos[os.path.basename(repo)]["cleanStat"]=check_clean(repo)
             if manifest:
@@ -167,6 +173,13 @@ def generate_manifest(repos):
         file.write("# For source code, refer to https://github.com/vppillai/H3Restore \n\n")
         yaml.dump(manifestData,file)
 
+# check if Git is available. 
+def check_git():
+    try:
+        git.cmd.Git().version()
+    except Exception as e:
+        print(Fore.RED+"Can't execute git commands. Make sure Git is installed and available in your PATH\n")
+        sys.exit(-5)
 
 if __name__ == "__main__":
     init(autoreset=True)
@@ -184,6 +197,8 @@ if __name__ == "__main__":
     group.add_argument('-k', '--package', dest='package', help='package file to be used to restore repos. Takes precedence over fetched versions')
     
     args = parser.parse_args()
+
+    check_git()
 
     manifest=None
     if args.manifest:
